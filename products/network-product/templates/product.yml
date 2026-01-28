@@ -5,8 +5,8 @@ metadata:
   namespace: default
 spec:
   values:
-    network_name: k8s-network
-    cluster_name: k8-tf-simulation
+    cluster_name: {{ .Values.cluster_name }}
+    network_name: {{ .Values.network_name }}
   interval: 15m
   timeout: 5m
   chart:
@@ -15,7 +15,7 @@ spec:
       version: '6.5.*'
       sourceRef:
         kind: GitRepository
-        name: ack-git
+        name: cloudnative-git
       interval: 5m
   releaseName: network-sce-release
   install:

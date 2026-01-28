@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: userinput-configmap
+  namespace: default
+data:
+  values.yaml: |
+    cluster_name: "k8-tf-simulation"
+    network_name: "k8s-network"

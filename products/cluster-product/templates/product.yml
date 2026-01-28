@@ -8,10 +8,9 @@ metadata:
 spec:
   dependsOn:
     - name: network-sce
-  valuesFrom:
-    - kind: ConfigMap
-      name: userinput-configmap
-      valuesKey: values.yaml
+  values:
+    cluster_name: {{ .Values.cluster_name }}
+    network_name: {{ .Values.network_name }}
   interval: 15m
   timeout: 40m
   chart:
@@ -20,7 +19,7 @@ spec:
       version: '6.5.*'
       sourceRef:
         kind: GitRepository
-        name: ack-git
+        name: cloudnative-git
       interval: 5m
   releaseName: cluster-sce-release
   install:

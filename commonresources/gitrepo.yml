@@ -1,0 +1,11 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: cloudnative-git
+  namespace: default
+spec:
+  interval: 15m
+  url: https://github.com/Ashish7812/cloudnativeartifacts
+  ref:
+    branch: main   # Change from master to main

@@ -17,7 +17,7 @@ spec:
       version: '6.5.*'
       sourceRef:
         kind: GitRepository
-        name: ack-git
+        name: cloudnative-git
       interval: 5m
   releaseName: network-product-release
   install:
@@ -48,7 +48,7 @@ spec:
       version: '6.5.*'
       sourceRef:
         kind: GitRepository
-        name: ack-git
+        name: cloudnative-git
       interval: 5m
   releaseName: cluster-product-release
   install:

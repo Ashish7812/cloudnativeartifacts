@@ -17,7 +17,7 @@ spec:
   # Reference to the Flux Source
   sourceRef:
     kind: GitRepository
-    name: ack-git
+    name: cloudnative-git
 
   # Runner configuration (multi-tenancy model)
   serviceAccountName: tf-runner-sa
