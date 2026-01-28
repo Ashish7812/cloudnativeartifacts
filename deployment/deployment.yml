@@ -1,0 +1,61 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: network-product
+  namespace: default
+spec:
+  valuesFrom:
+    - kind: ConfigMap
+      name: userinput-configmap
+      valuesKey: values.yaml
+  interval: 15m
+  timeout: 40m
+  chart:
+    spec:
+      chart: products/network-product
+      version: '6.5.*'
+      sourceRef:
+        kind: GitRepository
+        name: ack-git
+      interval: 5m
+  releaseName: network-product-release
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  test:
+    enable: true
+
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cluster-product
+  namespace: default
+spec:
+  valuesFrom:
+    - kind: ConfigMap
+      name: userinput-configmap
+      valuesKey: values.yaml
+  interval: 15m
+  timeout: 40m
+  chart:
+    spec:
+      chart: products/cluster-product
+      version: '6.5.*'
+      sourceRef:
+        kind: GitRepository
+        name: ack-git
+      interval: 5m
+  releaseName: cluster-product-release
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  test:
+    enable: true

@@ -1,0 +1,52 @@
+$schema: 'http://json-schema.org/draft-06/schema#'
+$ref: '#/definitions/Inputs'
+definitions:
+  Inputs:
+    type: object
+    additionalProperties: false
+    properties:
+      inputs:
+        type: array
+        items:
+          $ref: '#/definitions/Input'
+    required:
+      - inputs
+    title: Inputs to the cluster product
+  Input:
+    type: object
+    additionalProperties: false
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      type:
+        type: string
+      default:
+        type: string
+      immutable:
+        type: boolean
+      constraints:
+        $ref: '#/definitions/Constraints'
+    required:
+      - constraints
+      - default
+      - description
+      - immutable
+      - name
+      - required
+      - type
+    title: Input
+  Constraints:
+    type: object
+    additionalProperties: false
+    properties:
+      minLength:
+        type: integer
+      maxLength:
+        type: integer
+      pattern:
+        type: string
+    required:
+      - pattern
+    title: Constraints
