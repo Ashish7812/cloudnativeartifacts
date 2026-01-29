@@ -2,24 +2,25 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: network-product
+  name: bsinfra-sce
   namespace: default
 spec:
-  valuesFrom:
-    - kind: ConfigMap
-      name: userinput-configmap
-      valuesKey: network-input.yaml
-
+  dependsOn:
+    - name: cluster-sce
+  values:
+    bucket_name: {{ .Values.bucket_name }}
+    bsinfra_name: {{ .Values.bsinfra_name }}
   interval: 15m
   timeout: 40m
   chart:
     spec:
-      chart: products/network-product
+      chart: components/backing-service-infra-sce
       version: '6.5.*'
       sourceRef:
+        kind: GitRepository
         name: cloudnative-git
       interval: 5m
-  releaseName: network-product-release
+  releaseName: bsinfra-sce-release
   install:
     remediation:
       retries: 3
@@ -33,25 +34,26 @@ spec:
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: cluster-product
+  name: bsdeployment-sce
   namespace: default
 spec:
+  dependsOn:
+    - name: bsinfra-sce
   valuesFrom:
-    - kind: ConfigMap
-      name: userinput-configmap
-      valuesKey: cluster-input.yaml
-      
+    - kind: Secret
+      name: {{ .Values.bsinfra_name }}-outputs 
+      valuesKey: s3_bucket_arn
   interval: 15m
   timeout: 40m
   chart:
     spec:
-      chart: products/cluster-product
+      chart: components/backing-service-deployment-sce
       version: '6.5.*'
       sourceRef:
         kind: GitRepository
         name: cloudnative-git
       interval: 5m
-  releaseName: cluster-product-release
+  releaseName: bsdeployment-sce-release
   install:
     remediation:
       retries: 3

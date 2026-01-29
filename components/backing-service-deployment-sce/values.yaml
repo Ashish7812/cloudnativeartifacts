@@ -1,0 +1,1 @@
+bucket_arn: "arn:aws:s3:::k8s-security-bucket"
