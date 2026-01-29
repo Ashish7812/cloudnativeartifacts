@@ -35,7 +35,3 @@ spec:
   vars:
     - name: lambda_function_name
       value: {{ .Values.lambda_function_name }}
-
-  varsFrom:
-    - kind: Secret
-      name: {{ .Values.bucket_name }}-outputs
