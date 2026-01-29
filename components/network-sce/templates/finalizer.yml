@@ -1,0 +1,67 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-lifecycle-hook"
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    # This Job runs during both 'test' (install/upgrade) and 'post-delete' phases.
+    "helm.sh/hook": test, post-delete
+    "helm.sh/hook-delete-policy": hook-succeeded, hook-failed
+spec:
+  template:
+    spec:
+      serviceAccountName: tf-runner-tester # Your SA with get/list/watch permissions
+      restartPolicy: Never
+      containers:
+        - name: lifecycle-checker
+          image: bitnami/kubectl:latest
+          command:
+            - "/bin/sh"
+            - "-c"
+            - |
+              # Define the name of the Terraform resource we are monitoring
+              TF_RESOURCE_NAME="{{ .Values.network_name }}"
+              RELEASE_NAMESPACE="{{ .Release.Namespace }}"
+
+              echo "--- Lifecycle hook started. Checking context for Terraform resource '${TF_RESOURCE_NAME}'... ---"
+
+              # --- THE NEW, IMPROVED IF/ELSE LOGIC ---
+              # Check if the Terraform resource ITSELF has a deletionTimestamp.
+              # We suppress errors (2>/dev/null) in case the 'get' fails for any reason.
+              DELETION_TIMESTAMP=$(kubectl get terraform "${TF_RESOURCE_NAME}" -n "${RELEASE_NAMESPACE}" -o jsonpath='{.metadata.deletionTimestamp}' 2>/dev/null)
+
+              if [ -n "$DELETION_TIMESTAMP" ]; then
+                # --- DELETION PATH ---
+                # The timestamp exists, so a deletion has been triggered on the Terraform resource.
+                # This means we are in the 'post-delete' context.
+                echo "--- Context: Deletion. Waiting for Terraform resource '${TF_RESOURCE_NAME}' to be fully deleted... ---"
+                
+                # Wait until the 'kubectl get' command fails with a NotFound error.
+                kubectl wait --for=delete "terraform/${TF_RESOURCE_NAME}" --timeout=45m -n "${RELEASE_NAMESPACE}"
+                
+                if [ $? -eq 0 ]; then
+                  echo "--- Terraform resource successfully deleted. Hook successful. ---"
+                  exit 0
+                else
+                  echo "--- Timed out waiting for Terraform resource deletion. Hook failed. ---"
+                  exit 1
+                fi
+              else
+                # --- CREATE/UPGRADE PATH ---
+                # The timestamp does not exist, so the Terraform resource is active.
+                # This means we are in the 'test' context.
+                echo "--- Context: Install/Upgrade. Waiting for Terraform resource '${TF_RESOURCE_NAME}' to become Ready... ---"
+
+                # Wait for the 'Ready' condition to be 'True'.
+                kubectl wait --for=condition=Ready "terraform/${TF_RESOURCE_NAME}" --timeout=45m -n "${RELEASE_NAMESPACE}"
+
+                if [ $? -eq 0 ]; then
+                  echo "--- Terraform resource is Ready! Hook successful. ---"
+                  exit 0
+                else
+                  echo "--- Timed out waiting for Terraform resource to become Ready. Hook failed. ---"
+                  echo "--- Current status of Terraform resource '${TF_RESOURCE_NAME}': ---"
+                  kubectl get terraform "${TF_RESOURCE_NAME}" -n "${RELEASE_NAMESPACE}" -o yaml
+                  exit 1
+                fi
+              fi
