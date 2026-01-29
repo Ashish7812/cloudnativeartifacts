@@ -1,67 +1,82 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ .Release.Name }}-lifecycle-hook"
+  name: "{{ .Release.Name }}-readiness-test"
   namespace: {{ .Release.Namespace }}
   annotations:
-    # This Job runs during both 'test' (install/upgrade) and 'post-delete' phases.
-    "helm.sh/hook": test, post-delete
-    "helm.sh/hook-delete-policy": hook-succeeded, hook-failed
+    # This hook only runs on 'helm test' (after install/upgrade)
+    "helm.sh/hook": test
+    # Delete this Job if the test succeeds. Leave it for debugging if it fails.
+    "helm.sh/hook-delete-policy": hook-succeeded
+    # A weight to control execution order if you have multiple tests
+    "helm.sh/hook-weight": "0"
 spec:
   template:
     spec:
-      serviceAccountName: tf-runner-tester # Your SA with get/list/watch permissions
+      serviceAccountName: tf-runner-tester
       restartPolicy: Never
       containers:
-        - name: lifecycle-checker
+        - name: checker
           image: bitnami/kubectl:latest
           command:
             - "/bin/sh"
             - "-c"
             - |
-              # Define the name of the Terraform resource we are monitoring
               TF_RESOURCE_NAME="{{ .Values.network_name }}"
               RELEASE_NAMESPACE="{{ .Release.Namespace }}"
 
-              echo "--- Lifecycle hook started. Checking context for Terraform resource '${TF_RESOURCE_NAME}'... ---"
+              echo "--- TEST hook started. Waiting for Terraform resource '${TF_RESOURCE_NAME}' to become Ready... ---"
 
-              # --- THE NEW, IMPROVED IF/ELSE LOGIC ---
-              # Check if the Terraform resource ITSELF has a deletionTimestamp.
-              # We suppress errors (2>/dev/null) in case the 'get' fails for any reason.
-              DELETION_TIMESTAMP=$(kubectl get terraform "${TF_RESOURCE_NAME}" -n "${RELEASE_NAMESPACE}" -o jsonpath='{.metadata.deletionTimestamp}' 2>/dev/null)
+              # The single responsibility of this hook: wait for the 'Ready' condition.
+              kubectl wait --for=condition=Ready "terraform/${TF_RESOURCE_NAME}" --timeout=45m -n "${RELEASE_NAMESPACE}"
 
-              if [ -n "$DELETION_TIMESTAMP" ]; then
-                # --- DELETION PATH ---
-                # The timestamp exists, so a deletion has been triggered on the Terraform resource.
-                # This means we are in the 'post-delete' context.
-                echo "--- Context: Deletion. Waiting for Terraform resource '${TF_RESOURCE_NAME}' to be fully deleted... ---"
-                
-                # Wait until the 'kubectl get' command fails with a NotFound error.
-                kubectl wait --for=delete "terraform/${TF_RESOURCE_NAME}" --timeout=45m -n "${RELEASE_NAMESPACE}"
-                
-                if [ $? -eq 0 ]; then
-                  echo "--- Terraform resource successfully deleted. Hook successful. ---"
-                  exit 0
-                else
-                  echo "--- Timed out waiting for Terraform resource deletion. Hook failed. ---"
-                  exit 1
-                fi
+              if [ $? -eq 0 ]; then
+                echo "--- Terraform resource is Ready! Test successful. ---"
+                exit 0
               else
-                # --- CREATE/UPGRADE PATH ---
-                # The timestamp does not exist, so the Terraform resource is active.
-                # This means we are in the 'test' context.
-                echo "--- Context: Install/Upgrade. Waiting for Terraform resource '${TF_RESOURCE_NAME}' to become Ready... ---"
+                echo "--- Timed out waiting for Terraform resource to become Ready. Test failed. ---"
+                echo "--- Current status of Terraform resource '${TF_RESOURCE_NAME}': ---"
+                kubectl get terraform "${TF_RESOURCE_NAME}" -n "${RELEASE_NAMESPACE}" -o yaml
+                exit 1
+              fi
 
-                # Wait for the 'Ready' condition to be 'True'.
-                kubectl wait --for=condition=Ready "terraform/${TF_RESOURCE_NAME}" --timeout=45m -n "${RELEASE_NAMESPACE}"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-post-delete-monitor"
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    # This hook only runs after 'helm uninstall' has deleted the main resources
+    "helm.sh/hook": post-delete
+    # Always clean up this Job, regardless of outcome, to not block uninstallation.
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+    # A weight to control execution order
+    "helm.sh/hook-weight": "0"
+spec:
+  template:
+    spec:
+      serviceAccountName: tf-runner-tester
+      restartPolicy: Never
+      containers:
+        - name: monitor
+          image: bitnami/kubectl:latest
+          command:
+            - "/bin/sh"
+            - "-c"
+            - |
+              TF_RESOURCE_NAME="{{ .Values.network_name }}"
+              RELEASE_NAMESPACE="{{ .Release.Namespace }}"
 
-                if [ $? -eq 0 ]; then
-                  echo "--- Terraform resource is Ready! Hook successful. ---"
-                  exit 0
-                else
-                  echo "--- Timed out waiting for Terraform resource to become Ready. Hook failed. ---"
-                  echo "--- Current status of Terraform resource '${TF_RESOURCE_NAME}': ---"
-                  kubectl get terraform "${TF_RESOURCE_NAME}" -n "${RELEASE_NAMESPACE}" -o yaml
-                  exit 1
-                fi
+              echo "--- POST-DELETE hook started. Waiting for Terraform resource '${TF_RESOURCE_NAME}' to be fully deleted... ---"
+
+              # The single responsibility of this hook: wait for the resource to be deleted.
+              kubectl wait --for=delete "terraform/${TF_RESOURCE_NAME}" --timeout=45m -n "${RELEASE_NAMESPACE}"
+
+              if [ $? -eq 0 ]; then
+                echo "--- Terraform resource successfully deleted. Post-delete hook successful. ---"
+                exit 0
+              else
+                echo "--- Timed out waiting for Terraform resource deletion. Post-delete hook failed. ---"
+                exit 1
               fi
