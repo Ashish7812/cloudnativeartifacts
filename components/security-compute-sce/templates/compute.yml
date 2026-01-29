@@ -4,8 +4,6 @@ metadata:
   name: {{ .Values.security_compute_name }}
   namespace: default
 spec:
-  dependsOn:
-    - name: {{ .Values.bucket_name }}
   # Reconcile cadence: plan/apply and drift detection cadence
   interval: 5m
 
