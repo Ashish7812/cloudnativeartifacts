@@ -4,9 +4,6 @@ metadata:
   name: {{ .Values.cluster_name }}
   namespace: default
 spec:
-  dependsOn:
-    - name: {{ .Values.network_name }} # IMPORTANT: This must match the name of your VPC/Network Terraform CR
-
   # Reconcile cadence: plan/apply and drift detection cadence
   interval: 5m
 
