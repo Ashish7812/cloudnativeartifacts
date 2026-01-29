@@ -34,3 +34,31 @@ spec:
 ---
 # Other SCE part of the same clusterproduct can be defined here and the dependency between these SCE
 # can be managed using the dependsOn field as shown above.
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: security-sce
+  namespace: default
+spec:
+  values:
+    lambda_function_name: {{ .Values.lambda_function_name }}
+  interval: 15m
+  timeout: 40m
+  chart:
+    spec:
+      chart: components/security-compute-sce
+      version: '6.5.*'
+      sourceRef:
+        kind: GitRepository
+        name: cloudnative-git
+      interval: 5m
+  releaseName: security-compute-release
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  test:
+    enable: true
