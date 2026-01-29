@@ -43,6 +43,7 @@ metadata:
 spec:
   values:
     lambda_function_name: {{ .Values.lambda_function_name }}
+    bucket_arn: {{ .Values.bucket_arn }}
   interval: 15m
   timeout: 40m
   chart:

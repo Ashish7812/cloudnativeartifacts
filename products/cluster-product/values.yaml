@@ -1,3 +1,4 @@
 cluster_name: "k8-tf-simulation"
 network_name: "k8s-network"
 lambda_function_name: "k8s-security-lambda-function"
+bucket_arn: "arn:aws:s3:::k8s-security-bucket"
