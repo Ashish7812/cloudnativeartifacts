@@ -1,3 +1,10 @@
 bucket_name: sahoa-my-security-bucket
 bsinfra_name: "k8s-backing-service-infra"
 cluster_endpoint: ""
+
+bs_deployment_sce_helmrelease: bsdeployment-sce-release
+
+name: helm-field-export-sce
+kube_config_name: k8-tf-simulation-remote-kubeconfig-secret
+helm_release_name: producer-release-remote
+config_map_name: producer-release-remote-cm

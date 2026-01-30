@@ -59,7 +59,7 @@ spec:
         kind: GitRepository
         name: cloudnative-git
       interval: 5m
-  releaseName: bsdeployment-sce-release
+  releaseName: {{ .Values.bs_deployment_sce_helmrelease }}
   install:
     remediation:
       retries: 3
@@ -70,4 +70,39 @@ spec:
     enable: true
   kubeConfig:
     secretRef:
-      name: k8-tf-simulation-remote-kubeconfig-secret
+      name: {{ .Values.kube_config_name }}
+
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sync-bsdeployment-sce
+  namespace: default
+spec:
+  dependsOn:
+    - name: bsdeployment-sce
+  values:
+    name: {{ .Values.name }}
+    kube_config_name: {{ .Values.kube_config_name }}
+    helm_release_name: {{ .Values.bs_deployment_sce_helmrelease }}
+    config_map_name: {{ .Values.bs_deployment_sce_helmrelease }}-outputs
+    
+  interval: 15m
+  timeout: 40m
+  chart:
+    spec:
+      chart: components/helm-field-export-sce
+      version: '6.5.*'
+      sourceRef:
+        kind: GitRepository
+        name: cloudnative-git
+      interval: 5m
+  releaseName: sync-bsdeployment-sce-release
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  test:
+    enable: true

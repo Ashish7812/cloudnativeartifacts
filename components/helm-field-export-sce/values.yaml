@@ -1,0 +1,4 @@
+name: helm-field-export-sce
+kube_config_name: k8-simulation-client-cluster-kubeconfig
+helm_release_name: producer-release-remote
+config_map_name: producer-release-remote-cm
