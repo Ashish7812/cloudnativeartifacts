@@ -1,2 +1,3 @@
 bucket_name: sahoa-my-security-bucket
 bsinfra_name: "k8s-backing-service-infra"
+cluster_endpoint: ""

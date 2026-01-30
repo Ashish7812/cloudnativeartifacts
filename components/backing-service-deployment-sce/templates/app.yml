@@ -32,6 +32,13 @@ spec:
       containers:
       - name: nginx
         image: nginx:latest
+        env:
+            - name: BUCKET_NAME
+              value: {{ .Values.bucket_name }}
+            - name: BSINFRA_NAME
+              value: {{ .Values.bsinfra_name }}
+            - name: CLUSTER_ENDPOINT
+              value: {{ .Values.cluster_endpoint }}
         ports:
         - containerPort: 80
 

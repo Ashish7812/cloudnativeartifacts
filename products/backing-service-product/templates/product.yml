@@ -44,6 +44,11 @@ spec:
       name: {{ .Values.bsinfra_name }}-outputs 
       valuesKey: s3_bucket_arn
       targetPath: bucket_name
+    - kind: Secret
+      name: {{ .Values.cluster_name }}-outputs 
+      valuesKey: cluster_endpoint
+      targetPath: cluster_endpoint
+    
   interval: 15m
   timeout: 40m
   chart:

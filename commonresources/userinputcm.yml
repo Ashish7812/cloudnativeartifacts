@@ -13,5 +13,6 @@ data:
     network_name: "k8s-network"
 
   backingservice-input.yaml: |
+    cluster_name: "k8-tf-simulation"
     bucket_name: sahoa-my-security-bucket
     bsinfra_name: "k8s-backing-service-infra"
