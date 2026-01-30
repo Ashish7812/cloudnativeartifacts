@@ -62,3 +62,6 @@ spec:
       retries: 3
   test:
     enable: true
+  kubeConfig:
+    secretRef:
+      name: k8-tf-simulation-remote-kubeconfig-secret

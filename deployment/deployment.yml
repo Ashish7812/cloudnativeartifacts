@@ -17,6 +17,7 @@ spec:
       chart: products/network-product
       version: '6.5.*'
       sourceRef:
+        kind: GitRepository
         name: cloudnative-git
       interval: 5m
   releaseName: network-product-release
@@ -40,7 +41,7 @@ spec:
     - kind: ConfigMap
       name: userinput-configmap
       valuesKey: cluster-input.yaml
-      
+
   interval: 15m
   timeout: 40m
   chart:
