@@ -22,6 +22,10 @@ spec:
   serviceAccountName: tf-runner-sa
   destroyResourcesOnDeletion: true
   
+  # ✅ FORCE STATE LOCK HANDLING
+  lock:
+    force: true
+  
   # 👇 New: write all outputs to a Secret
   writeOutputsToSecret:
     name: {{ .Values.security_compute_name }}-outputs
